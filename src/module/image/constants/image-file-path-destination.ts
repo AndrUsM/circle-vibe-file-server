@@ -1,0 +1,1 @@
+export const IMAGE_FILE_PATH_DESTINATION: string = './uploads/images';

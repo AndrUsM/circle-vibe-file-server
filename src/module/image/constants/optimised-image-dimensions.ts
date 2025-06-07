@@ -1,0 +1,1 @@
+export const OPTIMISED_IMAGE_WIDTH_IN_PX = 576;

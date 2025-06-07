@@ -11,6 +11,8 @@ async function bootstrap() {
     prefix: '/files/',
   });
 
+  app.setGlobalPrefix('api');
+
   await app.listen(process.env.PORT ?? 3004);
 }
 

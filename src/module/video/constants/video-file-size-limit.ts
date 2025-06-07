@@ -1,0 +1,1 @@
+export const VIDEO_FILE_SIZE_LIMIT_IN_BYTES = 100 * 1024 * 1024;

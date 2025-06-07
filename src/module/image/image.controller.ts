@@ -4,37 +4,75 @@ import {
   UploadedFile,
   UseInterceptors,
   BadRequestException,
+  Param,
+  Get,
+  Res,
+  NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { Express } from 'express';
+import { Express, Response } from 'express';
+import * as path  from 'path';
+import * as fs from 'fs';
 
 import { modifyFileName, imageFileFilter } from './utils';
+import { ImageService } from './image.service';
+import {
+  IMAGE_FILE_PATH_DESTINATION,
+  IMAGE_FILE_SIZE_LIMIT_IN_BYTES,
+} from './constants';
+import { SERVER_PATH, composeOptimisedFilePath } from 'src/core';
+import { composeOptimizedImagesFileName } from './utils/compose-optimized-images-file-name';
 
 @Controller('images')
 export class ImageController {
+  constructor(private readonly imageService: ImageService) {}
+
+  @Get(':filename')
+  async serveImage(@Param('filename') filename: string, @Res() res: Response) {
+    const imagePath = path.join(__dirname, '..', '..', '..',  'uploads', 'images', filename);
+
+
+    fs.access(imagePath, fs.constants.F_OK, (err) => {
+      if (err) {
+        res.sendStatus(404);
+
+        return;
+      }
+
+      res.sendFile(imagePath);
+    });
+  }
+
   @Post('upload')
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
-        destination: './uploads/images',
+        destination: IMAGE_FILE_PATH_DESTINATION,
         filename: modifyFileName,
       }),
       fileFilter: imageFileFilter,
       limits: {
-        fileSize: 5 * 1024 * 1024, // 5 MB
+        fileSize: IMAGE_FILE_SIZE_LIMIT_IN_BYTES,
       },
     }),
   )
-  uploadImage(@UploadedFile() file: Express.Multer.File) {
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException(
         'No file uploaded or file type not allowed',
       );
     }
+
+    const baseFilePath = `${SERVER_PATH}/api/images`;
+    const filePath = `${baseFilePath}/${file.filename}`;
+    const optimisedFilePath = `${baseFilePath}/${composeOptimizedImagesFileName(file.filename)}`;
+
+    await this.imageService.uploadOptimisedImage(file.path);
+
     return {
-      message: 'Image uploaded successfully',
-      filePath: `/files/images/${file.filename}`,
+      filePath,
+      optimisedFilePath,
     };
   }
 }
