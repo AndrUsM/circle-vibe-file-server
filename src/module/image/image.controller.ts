@@ -21,7 +21,7 @@ import {
   IMAGE_FILE_PATH_DESTINATION,
   IMAGE_FILE_SIZE_LIMIT_IN_BYTES,
 } from './constants';
-import { SERVER_PATH, composeOptimisedFilePath } from 'src/core';
+import { SERVER_PATH } from 'src/core';
 import { composeOptimizedImagesFileName } from './utils/compose-optimized-images-file-name';
 
 @Controller('images')
