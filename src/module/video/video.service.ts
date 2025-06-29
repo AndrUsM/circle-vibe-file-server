@@ -1,13 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import * as ffmpeg from 'fluent-ffmpeg';
+import { Response, Request } from 'express';
+import { createReadStream, statSync, existsSync } from 'fs';
 import * as ffmpegStatic from 'ffmpeg-static';
-import { composeOptimisedFilePath } from 'src/core';
+import { composeOptimisedFilePath, SERVER_PATH } from 'src/core';
+import {
+  MP4_CONVERT_OUTPUT_OPTIONS,
+  VIDEO_CONTENT_TYPE,
+  VIDEO_FILE_DESTINATION,
+} from './constants';
+import path from 'path';
 
 @Injectable()
 export class VideoService {
   private ffmpegPath: string;
 
-    constructor() {
+  constructor() {
     this.ffmpegPath = String(ffmpegStatic);
   }
 
@@ -32,5 +40,67 @@ export class VideoService {
         })
         .run();
     });
+  }
+
+  convertToMp4(inputPath: string, outputPath: string): Promise<string> {
+    return new Promise((resolve, reject) =>
+      ffmpeg(inputPath)
+        .outputOptions(MP4_CONVERT_OUTPUT_OPTIONS)
+        .on('end', () => resolve(outputPath))
+        .on('error', (err) => reject(`Conversion error: ${err.message}`))
+        .save(outputPath),
+    );
+  }
+
+  async startVideoStream(
+    res: Response,
+    req: Request,
+    filePath: string,
+  ): Promise<void> {
+    const stat = statSync(filePath);
+    const fileSize = stat.size;
+    const range = req.headers.range;
+
+    if (range) {
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+      const stream = createReadStream(filePath, { start, end });
+      const contentLength = end - start + 1;
+
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': contentLength,
+        'Content-Type': VIDEO_CONTENT_TYPE,
+      });
+
+      stream.pipe(res);
+    } else {
+      res.writeHead(200, {
+        'Content-Length': fileSize,
+        'Content-Type': VIDEO_CONTENT_TYPE,
+      });
+
+      createReadStream(filePath).pipe(res);
+    }
+  }
+
+  async handleVideoUploading(video: Express.Multer.File): Promise<{
+    convertedVideoPath: string;
+    optimisedFilePath: string;
+  }> {
+    const videoPath = video.path;
+    const mp4FileName = `${path.parse(video.filename).name}.mp4`;
+    const outputPath = path.join(VIDEO_FILE_DESTINATION, mp4FileName);
+    const convertedVideoPath = await this.convertToMp4(videoPath, outputPath);
+
+    const optimisedFilePath = await this.compressForPreview(mp4FileName);
+
+    return {
+      convertedVideoPath,
+      optimisedFilePath,
+    };
   }
 }

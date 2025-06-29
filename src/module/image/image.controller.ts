@@ -7,7 +7,6 @@ import {
   Param,
   Get,
   Res,
-  NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -19,9 +18,8 @@ import { modifyFileName, imageFileFilter } from './utils';
 import { ImageService } from './image.service';
 import {
   IMAGE_FILE_PATH_DESTINATION,
-  IMAGE_FILE_SIZE_LIMIT_IN_BYTES,
 } from './constants';
-import { SERVER_PATH } from 'src/core';
+import { SERVER_PATH, UPLOAD_IMAGE_LIMIT_IN_BYTES } from 'src/core';
 import { composeOptimizedImagesFileName } from './utils/compose-optimized-images-file-name';
 
 @Controller('images')
@@ -53,11 +51,12 @@ export class ImageController {
       }),
       fileFilter: imageFileFilter,
       limits: {
-        fileSize: IMAGE_FILE_SIZE_LIMIT_IN_BYTES,
+        fileSize: UPLOAD_IMAGE_LIMIT_IN_BYTES,
       },
     }),
   )
   async uploadImage(@UploadedFile() file: Express.Multer.File) {
+    console.log(file);
     if (!file) {
       throw new BadRequestException(
         'No file uploaded or file type not allowed',

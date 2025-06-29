@@ -37,7 +37,7 @@ export class FileController {
         },
       }),
     )
-    async uploadImage(@UploadedFile() file: Express.Multer.File) {
+    async uploadFile(@UploadedFile() file: Express.Multer.File) {
       if (!file) {
         throw new BadRequestException(
           'No file uploaded or file type not allowed',
