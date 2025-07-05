@@ -1,7 +1,9 @@
 import {
   BadRequestException,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
   Post,
   Req,
@@ -9,7 +11,7 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { existsSync } from 'fs';
+import { existsSync, unlinkSync } from 'fs';
 import { diskStorage } from 'multer';
 import { join } from 'path';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -41,6 +43,14 @@ export class VideoController {
     }
 
     await this.videoService.startVideoStream(res, req, filePath);
+  }
+
+  @Delete(':filename')
+  @HttpCode(200)
+  async deleteVidep(@Param('filename') filename: string) {
+    const imagePath = join(__dirname, ...VIDEO_STREAM_FILE_PATH, filename);
+
+    unlinkSync(imagePath);
   }
 
   @Post('upload')

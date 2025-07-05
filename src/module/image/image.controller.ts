@@ -7,18 +7,18 @@ import {
   Param,
   Get,
   Res,
+  Delete,
+  HttpCode,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { Express, Response } from 'express';
-import * as path  from 'path';
+import * as path from 'path';
 import * as fs from 'fs';
 
 import { modifyFileName, imageFileFilter } from './utils';
 import { ImageService } from './image.service';
-import {
-  IMAGE_FILE_PATH_DESTINATION,
-} from './constants';
+import { IMAGE_FILE_PATH_DESTINATION } from './constants';
 import { SERVER_PATH, UPLOAD_IMAGE_LIMIT_IN_BYTES } from 'src/core';
 import { composeOptimizedImagesFileName } from './utils/compose-optimized-images-file-name';
 
@@ -28,8 +28,15 @@ export class ImageController {
 
   @Get(':filename')
   async serveImage(@Param('filename') filename: string, @Res() res: Response) {
-    const imagePath = path.join(__dirname, '..', '..', '..',  'uploads', 'images', filename);
-
+    const imagePath = path.join(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      'uploads',
+      'images',
+      filename,
+    );
 
     fs.access(imagePath, fs.constants.F_OK, (err) => {
       if (err) {
@@ -40,6 +47,22 @@ export class ImageController {
 
       res.sendFile(imagePath);
     });
+  }
+
+  @Delete(':filename')
+  @HttpCode(200)
+  async deleteVidep(@Param('filename') filename: string) {
+    const imagePath = path.join(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      'uploads',
+      'images',
+      filename,
+    );
+
+    fs.unlinkSync(imagePath);
   }
 
   @Post('upload')
