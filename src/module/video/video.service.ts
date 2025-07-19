@@ -3,13 +3,13 @@ import * as ffmpeg from 'fluent-ffmpeg';
 import { Response, Request } from 'express';
 import { createReadStream, statSync, existsSync } from 'fs';
 import * as ffmpegStatic from 'ffmpeg-static';
-import { composeOptimisedFilePath, SERVER_PATH } from 'src/core';
+import { composeOptimisedFilePath } from 'src/core';
 import {
   MP4_CONVERT_OUTPUT_OPTIONS,
   VIDEO_CONTENT_TYPE,
   VIDEO_FILE_DESTINATION,
 } from './constants';
-import path from 'path';
+import * as path from 'path';
 
 @Injectable()
 export class VideoService {
@@ -43,6 +43,14 @@ export class VideoService {
   }
 
   convertToMp4(inputPath: string, outputPath: string): Promise<string> {
+    const fileExtension = path.extname(inputPath);
+
+    if (fileExtension === '.mp4') {
+      return new Promise((resolve, reject) => {
+        resolve(outputPath);
+      });
+    }
+
     return new Promise((resolve, reject) =>
       ffmpeg(inputPath)
         .outputOptions(MP4_CONVERT_OUTPUT_OPTIONS)
@@ -92,14 +100,15 @@ export class VideoService {
     optimisedFilePath: string;
   }> {
     const videoPath = video.path;
-    const mp4FileName = `${path.parse(video.filename).name}.mp4`;
+    const mp4FileName = video.filename.replace(/\.[^/.]+$/, `.mp4`);
     const outputPath = path.join(VIDEO_FILE_DESTINATION, mp4FileName);
-    const convertedVideoPath = await this.convertToMp4(videoPath, outputPath);
 
-    const optimisedFilePath = await this.compressForPreview(mp4FileName);
+    await this.convertToMp4(videoPath, outputPath);
+
+    const optimisedFilePath = await this.compressForPreview(outputPath);
 
     return {
-      convertedVideoPath,
+      convertedVideoPath: mp4FileName,
       optimisedFilePath,
     };
   }
