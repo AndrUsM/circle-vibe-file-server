@@ -19,7 +19,7 @@ import * as fs from 'fs';
 import { modifyFileName, imageFileFilter } from './utils';
 import { ImageService } from './image.service';
 import { IMAGE_FILE_PATH_DESTINATION } from './constants';
-import { SERVER_PATH, UPLOAD_IMAGE_LIMIT_IN_BYTES } from 'src/core';
+import { UPLOAD_IMAGE_LIMIT_IN_BYTES } from 'src/core';
 import { composeOptimizedImagesFileName } from './utils/compose-optimized-images-file-name';
 
 @Controller('images')
@@ -86,7 +86,7 @@ export class ImageController {
       );
     }
 
-    const baseFilePath = `${SERVER_PATH}/api/images`;
+    const baseFilePath = 'images';
     const filePath = `${baseFilePath}/${file.filename}`;
     const optimisedFilePath = `${baseFilePath}/${composeOptimizedImagesFileName(file.filename)}`;
 

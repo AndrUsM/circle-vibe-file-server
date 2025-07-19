@@ -79,7 +79,7 @@ export class FileController {
       );
     }
 
-    const baseFilePath = `${SERVER_PATH}/api/files`;
+    const baseFilePath = 'files';
     const filePath = `${baseFilePath}/${file.filename}`;
 
     return {

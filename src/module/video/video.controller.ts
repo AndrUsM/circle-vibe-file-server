@@ -74,7 +74,7 @@ export class VideoController {
       throw new BadRequestException('Video file is too large!');
     }
 
-    const baseFileName = `${SERVER_PATH}/api/videos`;
+    const baseFileName = 'videos';
 
     const { convertedVideoPath, optimisedFilePath } =
       await this.videoService.handleVideoUploading(video);

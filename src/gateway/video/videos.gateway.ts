@@ -12,7 +12,14 @@ import {
   ConnectedSocket,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { FileVideoServerSocketKeys, FileVideoSocketConnectionAuthParams, FileVideoSocketErrorOutput, FileVideoSocketStartUploadParams, FileVideoSocketSuccessOutput, GatewayNamespaces } from '@circle-vibe/shared';
+import {
+  FileVideoServerSocketKeys,
+  FileVideoSocketConnectionAuthParams,
+  FileVideoSocketErrorOutput,
+  FileVideoSocketStartUploadParams,
+  FileVideoSocketSuccessOutput,
+  GatewayNamespaces,
+} from '@circle-vibe/shared';
 import {
   composeUploadedVideoUrl,
   UPLOAD_VIDEO_LIMIT_IN_BYTES,
@@ -32,9 +39,7 @@ export class VideosGateway implements OnGatewayDisconnect, OnGatewayConnection {
   private streams: Map<string, fs.WriteStream> = new Map();
   private fileNames: Map<string, string> = new Map();
 
-  constructor(private readonly videoService: VideoService) {
-
-  }
+  constructor(private readonly videoService: VideoService) {}
 
   handleConnection(client: Socket<FileVideoSocketConnectionAuthParams>) {
     const query = client.handshake.auth;
@@ -64,7 +69,10 @@ export class VideosGateway implements OnGatewayDisconnect, OnGatewayConnection {
 
       client.emit(FileVideoServerSocketKeys.UPLOAD_VIDEO_STARTED);
     } catch (error) {
-      client.emit<FileVideoSocketErrorOutput>(FileVideoServerSocketKeys.UPLOAD_VIDEO_ERROR, error.message);
+      client.emit<FileVideoSocketErrorOutput>(
+        FileVideoServerSocketKeys.UPLOAD_VIDEO_ERROR,
+        error.message,
+      );
     }
   }
 
@@ -76,7 +84,10 @@ export class VideosGateway implements OnGatewayDisconnect, OnGatewayConnection {
     const writeStream = this.streams.get(client.id);
 
     if (!writeStream) {
-      client.emit<FileVideoSocketErrorOutput>(FileVideoServerSocketKeys.UPLOAD_VIDEO_ERROR, 'Upload stream not found.');
+      client.emit<FileVideoSocketErrorOutput>(
+        FileVideoServerSocketKeys.UPLOAD_VIDEO_ERROR,
+        'Upload stream not found.',
+      );
       return;
     }
 
@@ -87,7 +98,10 @@ export class VideosGateway implements OnGatewayDisconnect, OnGatewayConnection {
   handleUploadEnd(@ConnectedSocket() client: Socket) {
     const writeStream = this.streams.get(client.id);
     if (!writeStream) {
-      client.emit<FileVideoSocketErrorOutput>(FileVideoServerSocketKeys.UPLOAD_VIDEO_ERROR, 'Upload stream not found.');
+      client.emit<FileVideoSocketErrorOutput>(
+        FileVideoServerSocketKeys.UPLOAD_VIDEO_ERROR,
+        'Upload stream not found.',
+      );
       return;
     }
 
@@ -96,21 +110,44 @@ export class VideosGateway implements OnGatewayDisconnect, OnGatewayConnection {
       const uploadedFileName = this.fileNames.get(client.id);
 
       if (!uploadedFileName) {
-        client.emit<FileVideoSocketErrorOutput>(FileVideoServerSocketKeys.UPLOAD_VIDEO_ERROR, 'File name not found.');
+        client.emit<FileVideoSocketErrorOutput>(
+          FileVideoServerSocketKeys.UPLOAD_VIDEO_ERROR,
+          'File name not found.',
+        );
         return;
       }
 
-      const filePathForConvertation = join(__dirname, VIDEOS_UPLOAD_PATH, uploadedFileName);
-      const filePathOutputForConvertation = filePathForConvertation.replace(/\.[^/.]+$/, `.mp4`);
+      const filePathForConvertation = join(
+        __dirname,
+        VIDEOS_UPLOAD_PATH,
+        uploadedFileName,
+      );
+      const filePathOutputForConvertation = filePathForConvertation.replace(
+        /\.[^/.]+$/,
+        `.mp4`,
+      );
+      const convertedVideoFileName = filePathOutputForConvertation
+        .split('/')
+        .pop();
 
-      const convertedVideoPath = await this.videoService.convertToMp4(filePathForConvertation, filePathOutputForConvertation);
+      const fileExtension = uploadedFileName.split('.').pop();
 
-      client.emit(FileVideoServerSocketKeys.UPLOAD_VIDEO_SUCCESS, {
-        filePath: composeUploadedVideoUrl(convertedVideoPath),
-      } as FileVideoSocketSuccessOutput);
+      if (fileExtension !== 'mp4') {
+        await this.videoService.convertToMp4(
+          filePathForConvertation,
+          filePathOutputForConvertation,
+        );
+      }
 
       this.fileNames.delete(client.id);
-      fs.unlinkSync(filePathForConvertation);
+
+      if (fileExtension !== 'mp4') {
+        fs.unlinkSync(filePathForConvertation);
+      }
+
+      client.emit(FileVideoServerSocketKeys.UPLOAD_VIDEO_SUCCESS, {
+        filePath: composeUploadedVideoUrl(String(convertedVideoFileName)),
+      } as FileVideoSocketSuccessOutput);
     });
   }
 
