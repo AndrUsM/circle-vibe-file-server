@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+  // output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FileEntityType {
+  IMAGE
+  VIDEO
+  FILE
+  AUDIO
+}
+
+enum Permissions {
+  READ
+  WRITE
+  DELETE
+}
+
+model File {
+  id           Int            @id @default(autoincrement())
+  name         String
+  url          String
+  optimizedUrl String
+  extension    String
+  entityType   FileEntityType @default(FILE)
+
+  uploadedAt DateTime
+
+  bucketId Int
+  bucket   Bucket @relation(fields: [bucketId], references: [id])
+}
+
+model App {
+  id          Int           @id @default(autoincrement())
+  name        String
+  permissions Permissions[] @default([READ, WRITE])
+  createdAt   DateTime
+
+  bucketId Int @unique
+  bucket   Bucket @relation(fields: [bucketId], references: [id])
+}
+
+model Bucket {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String
+  isUpdated   Boolean
+
+  createdAt DateTime
+  updatedAt DateTime
+  file      File[]
+  app App[]
+}
