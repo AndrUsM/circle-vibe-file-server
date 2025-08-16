@@ -6,35 +6,48 @@ import {
   HttpCode,
   Param,
   Post,
+  Query,
   Req,
   Res,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { existsSync, unlinkSync } from 'fs';
-import { diskStorage } from 'multer';
-import { join } from 'path';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { existsSync } from 'fs';
 import { Response, Request } from 'express';
-import { modifyFileName, SERVER_PATH } from 'src/core';
 import {
-  VIDEO_FILE_DESTINATION,
   VIDEO_FILE_SIZE_LIMIT_IN_BYTES,
-  VIDEO_STREAM_FILE_PATH,
 } from './constants';
 import { VideoService } from './video.service';
+import { FileEntityType } from '@prisma/client';
+import { BucketService } from '@core/services';
+import { FileInterceptorWithRequestParams } from '@core/interceptors';
 
 @Controller('videos')
 export class VideoController {
-  constructor(private readonly videoService: VideoService) {}
+  constructor(
+    private readonly videoService: VideoService,
+    private readonly bucketService: BucketService,
+  ) {}
 
   @Get(':filename')
   async streamVideo(
     @Param('filename') filename: string,
+    @Query('bucket') bucket: string,
+
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const filePath = join(__dirname, ...VIDEO_STREAM_FILE_PATH, filename);
+    const filePath = await this.bucketService.getFilePath({
+      bucket,
+      entityType: FileEntityType.VIDEO,
+      filename,
+    });
+
+    if (!filePath) {
+      res.sendStatus(400);
+      return;
+    }
+
     const isFileExists = existsSync(filePath);
 
     if (!isFileExists) {
@@ -47,23 +60,24 @@ export class VideoController {
 
   @Delete(':filename')
   @HttpCode(200)
-  async deleteVidep(@Param('filename') filename: string) {
-    const imagePath = join(__dirname, ...VIDEO_STREAM_FILE_PATH, filename);
-
-    unlinkSync(imagePath);
+  async deleteVidep(
+    @Param('filename') filename: string,
+    @Query('bucket') bucket: string,
+  ) {
+    return this.bucketService.deleteFile({
+      bucket,
+      entityType: FileEntityType.VIDEO,
+      filename,
+    });
   }
 
   @Post('upload')
   @UseInterceptors(
-    FileInterceptor('video', {
+    FileInterceptorWithRequestParams('video', FileEntityType.VIDEO, () => ({
       limits: {
         fileSize: VIDEO_FILE_SIZE_LIMIT_IN_BYTES,
       },
-      storage: diskStorage({
-        destination: VIDEO_FILE_DESTINATION,
-        filename: modifyFileName,
-      }),
-    }),
+    })),
   )
   async uploadVideo(@UploadedFile() video: Express.Multer.File) {
     if (!video) {

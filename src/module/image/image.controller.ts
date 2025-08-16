@@ -9,34 +9,43 @@ import {
   Res,
   Delete,
   HttpCode,
+  Query,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
 import { Express, Response } from 'express';
-import * as path from 'path';
+import { FileEntityType } from '@prisma/client';
 import * as fs from 'fs';
 
-import { modifyFileName, imageFileFilter } from './utils';
+import { FileInterceptorWithRequestParams } from '@core/interceptors';
+import { BucketService } from '@core/services';
+
+import { imageFileFilter } from './utils';
 import { ImageService } from './image.service';
-import { IMAGE_FILE_PATH_DESTINATION } from './constants';
 import { UPLOAD_IMAGE_LIMIT_IN_BYTES } from 'src/core';
 import { composeOptimizedImagesFileName } from './utils/compose-optimized-images-file-name';
 
 @Controller('images')
 export class ImageController {
-  constructor(private readonly imageService: ImageService) {}
+  constructor(
+    private readonly imageService: ImageService,
+    private readonly bucketService: BucketService,
+  ) {}
 
   @Get(':filename')
-  async serveImage(@Param('filename') filename: string, @Res() res: Response) {
-    const imagePath = path.join(
-      __dirname,
-      '..',
-      '..',
-      '..',
-      'uploads',
-      'images',
+  async serveImage(
+    @Param('filename') filename: string,
+    @Query('bucket') bucket: string,
+    @Res() res: Response,
+  ) {
+    const imagePath = await this.bucketService.getFilePath({
+      bucket,
+      entityType: FileEntityType.IMAGE,
       filename,
-    );
+    });
+
+    if (!imagePath) {
+      res.sendStatus(400);
+      return;
+    }
 
     fs.access(imagePath, fs.constants.F_OK, (err) => {
       if (err) {
@@ -51,32 +60,25 @@ export class ImageController {
 
   @Delete(':filename')
   @HttpCode(200)
-  async deleteVidep(@Param('filename') filename: string) {
-    const imagePath = path.join(
-      __dirname,
-      '..',
-      '..',
-      '..',
-      'uploads',
-      'images',
+  async deleteVidep(
+    @Param('filename') filename: string,
+    @Query('bucket') bucket: string,
+  ) {
+    this.bucketService.deleteFile({
+      bucket,
+      entityType: FileEntityType.IMAGE,
       filename,
-    );
-
-    fs.unlinkSync(imagePath);
+    });
   }
 
   @Post('upload')
   @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: IMAGE_FILE_PATH_DESTINATION,
-        filename: modifyFileName,
-      }),
+    FileInterceptorWithRequestParams('image', FileEntityType.IMAGE, () => ({
       fileFilter: imageFileFilter,
       limits: {
         fileSize: UPLOAD_IMAGE_LIMIT_IN_BYTES,
       },
-    }),
+    })),
   )
   async uploadImage(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
