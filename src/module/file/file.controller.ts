@@ -41,7 +41,6 @@ export class FileController {
       return;
     }
 
-    console.log(filePath)
     fs.access(filePath, fs.constants.F_OK, (err) => {
       if (err) {
         res.sendStatus(404);
