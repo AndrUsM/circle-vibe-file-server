@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  // output   = "./generated/prisma"
 }
 
 datasource db {
@@ -29,7 +28,7 @@ model File {
   extension    String
   entityType   FileEntityType @default(FILE)
 
-  uploadedAt DateTime
+  uploadedAt DateTime? @default(now())
 
   bucketId Int
   bucket   Bucket @relation(fields: [bucketId], references: [id])
@@ -39,20 +38,22 @@ model App {
   id          Int           @id @default(autoincrement())
   name        String
   permissions Permissions[] @default([READ, WRITE])
-  createdAt   DateTime
+  createdAt   DateTime?     @default(now())
 
-  bucketId Int @unique
+  bucketId Int    @unique
   bucket   Bucket @relation(fields: [bucketId], references: [id])
 }
 
 model Bucket {
-  id          Int     @id @default(autoincrement())
-  name        String
-  description String
-  isUpdated   Boolean
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  folder      String
+  description String?
+  isUpdated   Boolean? @default(false)
 
-  createdAt DateTime
-  updatedAt DateTime
-  file      File[]
-  app App[]
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @default(now())
+
+  file File[]
+  app  App[]
 }

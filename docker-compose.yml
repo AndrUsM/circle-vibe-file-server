@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  main-dabatase:
+    image: postgres:15
+    container_name: cirlce_vibe_file_server_database
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nestuser
+      POSTGRES_PASSWORD: nestpassword
+      POSTGRES_DB: circle-vibe-file-server-db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  pgdata:
