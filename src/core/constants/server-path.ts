@@ -1,1 +1,1 @@
-export const SERVER_PATH = "http://localhost:3004";
+export const SERVER_PATH = process.env.MAIN_API_URL;
