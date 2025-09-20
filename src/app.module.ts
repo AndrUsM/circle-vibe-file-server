@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { BucketService, BucketServiceModule } from '@core/services';
 
-import { ImageModule, VideoModule, FileModule, BucketModule } from './module';
+import { ImageModule, VideoModule, FileModule, BucketModule, AudioModule } from './module';
 import { VideoGatewayModule } from './gateway';
 import { DatabaseModule, DatabaseService } from './core/database';
 
@@ -15,6 +15,7 @@ import { DatabaseModule, DatabaseService } from './core/database';
     }),
     DatabaseModule,
     BucketServiceModule,
+    AudioModule,
     VideoModule,
     ImageModule,
     FileModule,
