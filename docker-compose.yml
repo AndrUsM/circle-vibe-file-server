@@ -5,9 +5,6 @@ services:
     image: postgres:15
     container_name: cirlce_vibe_file_server_database
     restart: unless-stopped
-    build:
-      context: .
-      dockerfile: Dockerfile
     environment:
       POSTGRES_USER: nestuser
       POSTGRES_PASSWORD: nestpassword
@@ -16,12 +13,6 @@ services:
       - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    networks:
-     - circle-vibe-network
 
 volumes:
   pgdata:
-
-networks:
-  circle-vibe-network:
-    external: true
