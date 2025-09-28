@@ -1,5 +1,5 @@
 import { BucketCreateInputParams, BucketService } from '@core/services';
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, NotFoundException, Param, ParseIntPipe, Post, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
 
 @Controller('bucket')
@@ -35,17 +35,16 @@ export class BucketController {
   async createBucket(@Body() body: BucketCreateInputParams, @Res() res: Response, @Req() req: Request) {
     const bucket = await this.bucketService.createBucket(body);
 
-    if(!bucket) {
-      res.sendStatus(404);
-      return;
+    if(!bucket) {  
+      throw new NotFoundException();
     }
 
-    res.sendStatus(201);
+    res.json(bucket).sendStatus(201);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  async deleteBucket(@Param() id: string) {
-    this.bucketService.deleteBucket(Number(id));
+  async deleteBucket(@Param('id', ParseIntPipe) id: number) {
+    this.bucketService.deleteBucket(id);
   }
 }

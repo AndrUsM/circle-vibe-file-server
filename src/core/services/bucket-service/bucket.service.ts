@@ -95,7 +95,7 @@ export class BucketService {
 
   deleteBucket(id: number): void {
     try {
-      this.databaseService.bucket.delete({ where: { id } })
+      this.databaseService.bucket.delete({ where: { id } });
     } catch (error) {
       Logger.error(error);
     }
