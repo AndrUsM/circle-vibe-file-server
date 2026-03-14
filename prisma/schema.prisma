@@ -46,7 +46,7 @@ model App {
 
 model Bucket {
   id          Int      @id @default(autoincrement())
-  name        String   @unique
+  name        String
   folder      String
   description String?
   isUpdated   Boolean? @default(false)

@@ -54,7 +54,6 @@ export class BucketService {
 
   async createBucket(params: BucketCreateInputParams): Promise<Bucket | null> {
     const { name, description } = params;
-
     const folder = this.generateFolderName();
 
     try {
