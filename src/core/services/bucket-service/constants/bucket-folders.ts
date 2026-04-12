@@ -17,4 +17,4 @@ export const BUCKET_FOLDER_FULL_PATHS_MAP = (
 export const BUCKET_FOLDER_FULL_PATHS = (bucketFolder: string): string[] =>
   Object.values(BUCKET_FOLDER_FULL_PATHS_MAP(bucketFolder));
 
-export const BUCKET_BASE_PATH = (bucketFolder: string) => `${STORAGE_PATH}/${bucketFolder}`;
+export const BUCKET_BASE_PATH = (bucketFolder: string) => `${process.cwd()}/${STORAGE_PATH}/${bucketFolder}`;
