@@ -22,7 +22,7 @@ export class BucketService {
     }
 
     const pathByEntity = BUCKET_FOLDER_FULL_PATHS_MAP(bucketFull?.folder)[entityType];
-
+    
     return [pathByEntity, filename].join('/');
   }
 

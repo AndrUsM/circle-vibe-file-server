@@ -8,10 +8,10 @@ export const BUCKET_FOLDERS: string[] = Object.values(BUCKET_FOLDER);
 export const BUCKET_FOLDER_FULL_PATHS_MAP = (
   bucketFolder: string,
 ): Record<FileEntityType, string> => ({
-  [FileEntityType.IMAGE]: `${STORAGE_PATH}/${bucketFolder}/${BUCKET_FOLDER.IMAGE}`,
-  [FileEntityType.VIDEO]: `${STORAGE_PATH}/${bucketFolder}/${BUCKET_FOLDER.VIDEO}`,
-  [FileEntityType.FILE]: `${STORAGE_PATH}/${bucketFolder}/${BUCKET_FOLDER.FILE}`,
-  [FileEntityType.AUDIO]: `${STORAGE_PATH}/${bucketFolder}/${BUCKET_FOLDER.AUDIO}`,
+  [FileEntityType.IMAGE]: `${process.cwd()}/${STORAGE_PATH}/${bucketFolder}/${BUCKET_FOLDER.IMAGE}`,
+  [FileEntityType.VIDEO]: `${process.cwd()}/${STORAGE_PATH}/${bucketFolder}/${BUCKET_FOLDER.VIDEO}`,
+  [FileEntityType.FILE]: `${process.cwd()}/${STORAGE_PATH}/${bucketFolder}/${BUCKET_FOLDER.FILE}`,
+  [FileEntityType.AUDIO]: `${process.cwd()}/${STORAGE_PATH}/${bucketFolder}/${BUCKET_FOLDER.AUDIO}`,
 });
 
 export const BUCKET_FOLDER_FULL_PATHS = (bucketFolder: string): string[] =>
