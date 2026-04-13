@@ -1,14 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import * as ffmpeg from 'fluent-ffmpeg';
 import { Response, Request } from 'express';
-import { createReadStream, statSync, existsSync } from 'fs';
+import { createReadStream, statSync } from 'fs';
 import * as ffmpegStatic from 'ffmpeg-static';
 import { composeOptimisedFilePath } from 'src/core';
-import {
-  MP4_CONVERT_OUTPUT_OPTIONS,
-  VIDEO_CONTENT_TYPE,
-  VIDEO_FILE_DESTINATION,
-} from './constants';
+import { MP4_CONVERT_OUTPUT_OPTIONS, VIDEO_CONTENT_TYPE } from './constants';
 import * as path from 'path';
 
 @Injectable()
@@ -16,11 +12,13 @@ export class VideoService {
   private ffmpegPath: string;
 
   constructor() {
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     this.ffmpegPath = String(ffmpegStatic);
   }
 
   async compressForPreview(inputVideoPath: string): Promise<string> {
     const outputVideoPath = composeOptimisedFilePath(inputVideoPath);
+
     return new Promise((resolve, reject) => {
       ffmpeg(inputVideoPath)
         .setFfmpegPath(this.ffmpegPath)
@@ -35,20 +33,24 @@ export class VideoService {
           resolve(String(fileName));
         })
         .on('error', (err) => {
-          console.error('Error compressing video:', err);
           reject(err);
         })
         .run();
     });
   }
 
-  convertToMp4(inputPath: string, outputPath: string): Promise<string> {
-    const fileExtension = path.extname(inputPath);
+  convertToMp4(inputPath: string, outputPath: string): Promise<string | null> {
+    const fs = require('fs');
+    const path = require('path');
 
-    if (fileExtension === '.mp4') {
-      return new Promise((resolve, reject) => {
-        resolve(outputPath);
-      });
+    if (path.extname(inputPath) === '.mp4') {
+      return Promise.resolve(outputPath);
+    }
+
+    const outputDir = path.dirname(outputPath);
+
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
     }
 
     return new Promise((resolve, reject) =>
@@ -95,17 +97,24 @@ export class VideoService {
     }
   }
 
+  getRelatedFilePath(filePath: string): string {
+    return filePath.replace(/^.*?(uploads\/)/, '$1');
+  }
+
   async handleVideoUploading(video: Express.Multer.File): Promise<{
     convertedVideoPath: string;
     optimisedFilePath: string;
   }> {
     const videoPath = video.path;
+    const destinationFilePath = this.getRelatedFilePath(video.destination);
     const mp4FileName = video.filename.replace(/\.[^/.]+$/, `.mp4`);
-    const outputPath = path.join(VIDEO_FILE_DESTINATION, mp4FileName);
+    const outputPath = path.join(destinationFilePath, mp4FileName);
 
-    await this.convertToMp4(videoPath, outputPath);
+    const mp4FilePath = await this.convertToMp4(videoPath, outputPath);
 
-    const optimisedFilePath = await this.compressForPreview(outputPath);
+    const optimisedFilePath = await this.compressForPreview(
+      mp4FilePath ?? videoPath,
+    );
 
     return {
       convertedVideoPath: mp4FileName,

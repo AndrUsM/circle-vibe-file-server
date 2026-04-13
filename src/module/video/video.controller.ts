@@ -14,9 +14,7 @@ import {
 } from '@nestjs/common';
 import { existsSync } from 'fs';
 import { Response, Request } from 'express';
-import {
-  VIDEO_FILE_SIZE_LIMIT_IN_BYTES,
-} from './constants';
+import { VIDEO_FILE_SIZE_LIMIT_IN_BYTES } from './constants';
 import { VideoService } from './video.service';
 import { FileEntityType } from '@prisma/client';
 import { BucketService } from '@core/services';
@@ -89,7 +87,6 @@ export class VideoController {
     }
 
     const baseFileName = 'videos';
-
     const { convertedVideoPath, optimisedFilePath } =
       await this.videoService.handleVideoUploading(video);
 
